@@ -1,7 +1,5 @@
-local Scene  = require("lua/core/scene")
-local Sprite = require("lua/core/sprite")
-local Timer  = require("lua/core/timer")
-local Player = require("game/player")
+local Scene     = require("lua/core/scene")
+local GameState = require("lua/game/game_state")
 
 local GameScene = {}
 GameScene.__index = GameScene
@@ -13,41 +11,32 @@ function GameScene.new()
 end
 
 function GameScene:on_enter()
-    self.player = Player.new(-16, 170)
-    self.drawer:add(self.player, 10)
+    self.state = GameState.new()
 
-    self.ground = Sprite.new(-640, 220, 1600, 30)
-    self.ground.color = { 0.25, 0.65, 0.25, 1 }
-    self.drawer:add(self.ground, 1)
+    -- Camera:attach() computes screen = (w/2, h/2) + zoom*(world - camera_pos).
+    -- The default camera.x, camera.y = 0, 0 would shift every draw call by
+    -- (640, 360) off-canvas, so cancel that offset once here (not a per-frame
+    -- follow) so world pixel coordinates map 1:1 to screen coordinates.
+    self.camera.x = 640
+    self.camera.y = 360
 
-    self.blink_timer = Timer.new(0.5)
-    self.coins = {}
-    for i = 1, 7 do
-        local coin = Sprite.new(i * 140 - 560, 193, 18, 18)
-        coin.color = { 1, 0.85, 0.1, 1 }
-        self.drawer:add(coin, 5)
-        table.insert(self.coins, coin)
-    end
-end
-
-function GameScene:update(dt)
-    self.player:update(dt)
-    self.camera:follow(self.player:centre(), 0.85)
-
-    if self.blink_timer:update(dt) then
-        for _, coin in ipairs(self.coins) do
-            coin.visible = not coin.visible
+    -- main.lua stays unmodified, so the scene installs the mouse handler.
+    local state = self.state
+    love.mousepressed = function(x, y, button)
+        if button == 1 then
+            state:toggle_road_at_pixel(x, y)
         end
     end
 end
 
-function GameScene:draw()
-    Scene.draw(self)
+function GameScene:update(dt)
+    self.state:update(dt)
+end
 
-    love.graphics.setColor(1, 1, 1, 1)
-    love.graphics.print("WASD / Arrow keys to move   ESC to quit", 16, 16)
-    local c = self.player:centre()
-    love.graphics.print(string.format("player (%.0f, %.0f)", c.x, c.y), 16, 36)
+function GameScene:draw()
+    self.camera:attach()
+    self.state:draw()
+    self.camera:detach()
 end
 
 return GameScene

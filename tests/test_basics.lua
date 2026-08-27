@@ -1,12 +1,9 @@
 -- test_basics.lua
 -- Minimal example demonstrating the headless test infrastructure.
 --
--- NOTE: game/player.lua creates its own internal Input instance (it calls
--- love.keyboard.isDown directly rather than accepting an injected Input
--- object), so headless action injection into player movement is not
--- straightforward without refactoring the Player class.  This test therefore
--- limits itself to observable state that does not require controlling the
--- player via HeadlessInput.
+-- NOTE: GameScene has no keyboard input to script (mouse-click-only via
+-- love.mousepressed), so this test just ticks a fresh scene and checks it
+-- doesn't error.
 
 local runner = require("lua/headless/runner")
 
