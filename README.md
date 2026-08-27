@@ -1,13 +1,24 @@
-# love-exemplar
+# traffic-game
 
-A minimal Love2D project demonstrating clean architecture patterns. Intended as a reference, not a game.
+A grid-based traffic simulation built on the love-exemplar Love2D architecture.
+Five fixed buildings sit on a 64×34 grid of 20×20px cells; the player draws
+permanent roads by clicking (or click-and-dragging across) empty cells to
+connect them. A scrolling forecast
+bar along the top announces incoming demand (`A -> B x6`) between buildings,
+and once a building is connected to the network, cars pathfind across the
+road graph and drive sub-cell by sub-cell toward their destination, yielding
+right-of-way to whichever car has waited longest at a contested cell. Each
+delivered car increments an on-screen score. No win/lose condition — it's an
+endless sandbox.
 
 ## Structure
 
 ```
-core/lua/       Engine classes — no game knowledge (Camera, Drawer, Input, Scene,
+lua/core/       Engine classes — no game knowledge (Camera, Drawer, Input, Scene,
                 SceneManager, Sprite, SpriteSet, Timer, Fonts)
-game/           Game-specific code (Player, GameScene)
+lua/game/       Traffic game logic (Grid, Pathfinder, Building, Car, Forecast,
+                ForecastBar, GameState) — no rendering/engine knowledge
+game/           Game-specific scene (GameScene, in game/scenes/)
 lua/headless/   Headless test infrastructure (stubs, HeadlessInput, runner)
 tests/          Test files — run with: love . --headless
 assets/         Images and other assets
