@@ -186,6 +186,42 @@ do
     print("PASS: grid: eastbound/westbound lanes stay on disjoint sub-cell rows")
 end
 
+-- Test 6c: vertical lane discipline — northbound uses the right column
+-- (lx==1), southbound uses the left column (lx==0), and they stay
+-- disjoint along a shared vertical corridor.
+do
+    local g = Grid.new()
+    g:set_road(5, 5)
+    g:set_road(5, 6)
+
+    -- southbound lane: left column, bottom row of cell (5,5) -> scol=10, srow=11
+    local s1 = g:subcell_neighbors(10, 11)
+    local crossed_south = nil
+    for _, n in ipairs(s1) do
+        if n.row == 12 then crossed_south = n end
+    end
+    assert(crossed_south ~= nil, "southbound lane should cross from cell (5,5) into cell (5,6)")
+    assert(crossed_south.col == 10, "southbound lane should stay on the left column (scol=10) crossing into cell (5,6)")
+
+    -- northbound lane: right column, top row of cell (5,6) -> scol=11, srow=12
+    local n1 = g:subcell_neighbors(11, 12)
+    local crossed_north = nil
+    for _, n in ipairs(n1) do
+        if n.row == 11 then crossed_north = n end
+    end
+    assert(crossed_north ~= nil, "northbound lane should cross from cell (5,6) into cell (5,5)")
+    assert(crossed_north.col == 11, "northbound lane should stay on the right column (scol=11) crossing into cell (5,5)")
+    assert(crossed_north.col ~= crossed_south.col, "northbound and southbound lanes must use disjoint sub-cell columns")
+
+    -- the "wrong" corner (right column, bottom row -- the east/south-facing
+    -- corner) must not itself be usable to cross south
+    local wrong_south = g:subcell_neighbors(11, 11)
+    for _, n in ipairs(wrong_south) do
+        assert(n.row ~= 12, "right-column bottom-row subcell (not the southbound lane) must not cross south")
+    end
+    print("PASS: grid: northbound/southbound lanes stay on disjoint sub-cell columns (north=right, south=left)")
+end
+
 -- Test 7: subcell_neighbors returns fewer neighbors at grid edges / against empty cells
 do
     local g = Grid.new()

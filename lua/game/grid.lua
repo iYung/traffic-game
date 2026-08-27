@@ -146,16 +146,15 @@ function Grid:subcell_neighbors(scol, srow)
     -- inevitably met head-on in the same sub-cell and permanently
     -- deadlocked (neither's target ever frees up). Assigning eastbound to
     -- the bottom row (ly==1) and westbound to the top row (ly==0) -- and
-    -- southbound to the right column (lx==1), northbound to the left
+    -- northbound to the right column (lx==1), southbound to the left
     -- column (lx==0) -- keeps opposite directions on physically disjoint
-    -- sub-cells for the whole length of a shared corridor. Turning between
-    -- an east/west track and a north/south track still works: the two
-    -- "through" corners ((0,0) and (1,1)) each sit on both an
-    -- east/west-eligible row and a north/south-eligible column, and the
-    -- full same-cell mesh above lets a car reach whichever corner it needs
-    -- with at most one extra intra-cell hop -- the same hop every
-    -- straight-through path already needed to cross a 2-wide cell, so this
-    -- costs nothing extra over the old, undirected version.
+    -- sub-cells for the whole length of a shared corridor. Each of a
+    -- cell's 4 corners now serves exactly one direction: (0,0)=west,
+    -- (1,1)=east, (0,1)=south, (1,0)=north. Turning between axes still
+    -- works via the full same-cell mesh above, at the same one extra
+    -- intra-cell hop every straight-through path already paid to cross a
+    -- 2-wide cell, so this costs nothing extra over the old, undirected
+    -- version.
     local lx = scol % 2
     local ly = srow % 2
 
@@ -171,15 +170,15 @@ function Grid:subcell_neighbors(scol, srow)
         end
     end
 
-    if ly == 1 and lx == 1 then
+    if ly == 1 and lx == 0 then
         local ncol, nrow = col, row + 1
         if self:is_passable(ncol, nrow) then
-            table.insert(result, { col = ncol * 2 + 1, row = nrow * 2 + 0 })
+            table.insert(result, { col = ncol * 2 + 0, row = nrow * 2 + 0 })
         end
-    elseif ly == 0 and lx == 0 then
+    elseif ly == 0 and lx == 1 then
         local ncol, nrow = col, row - 1
         if self:is_passable(ncol, nrow) then
-            table.insert(result, { col = ncol * 2 + 0, row = nrow * 2 + 1 })
+            table.insert(result, { col = ncol * 2 + 1, row = nrow * 2 + 1 })
         end
     end
 

@@ -85,6 +85,37 @@ local function step(buildings, buildings_by_id, grid, cars, dt)
     return delivered
 end
 
+-- Runs the flood-a-corridor scenario against a given grid/building pair and
+-- asserts both directions keep delivering instead of stalling.
+local function assert_no_deadlock(label, grid, a, b)
+    local buildings = { a, b }
+    local buildings_by_id = { [a.id] = a, [b.id] = b }
+    local cars = {}
+
+    local total_delivered = 0
+    local ticks = 0
+    local MAX_TICKS = 20000 -- ~333 simulated seconds at dt=1/60
+
+    while total_delivered < 40 and ticks < MAX_TICKS do
+        if a:queue_length() < 3 then
+            a:enqueue(b.id)
+        end
+        if b:queue_length() < 3 then
+            b:enqueue(a.id)
+        end
+
+        total_delivered = total_delivered + step(buildings, buildings_by_id, grid, cars, 1 / 60)
+        ticks = ticks + 1
+    end
+
+    assert(total_delivered >= 40,
+        "[" .. label .. "] expected 40 deliveries across both directions without deadlocking, got "
+        .. total_delivered .. " after " .. ticks .. " ticks")
+    print("PASS: no_deadlock: " .. label .. " bidirectional traffic keeps flowing ("
+        .. total_delivered .. " delivered in " .. ticks .. " ticks)")
+end
+
+-- Test 1: horizontal corridor (east/west traffic)
 do
     local grid = Grid.new()
     grid:set_building(0, 0, "A")
@@ -95,31 +126,22 @@ do
 
     local a = Building.new("A", 0, 0, { 1, 0, 0, 1 })
     local b = Building.new("B", 9, 0, { 0, 0, 1, 1 })
-    local buildings = { a, b }
-    local buildings_by_id = { A = a, B = b }
-    local cars = {}
+    assert_no_deadlock("horizontal corridor", grid, a, b)
+end
 
-    local total_delivered = 0
-    local ticks = 0
-    local MAX_TICKS = 20000 -- ~333 simulated seconds at dt=1/60
-
-    while total_delivered < 40 and ticks < MAX_TICKS do
-        if a:queue_length() < 3 then
-            a:enqueue("B")
-        end
-        if b:queue_length() < 3 then
-            b:enqueue("A")
-        end
-
-        total_delivered = total_delivered + step(buildings, buildings_by_id, grid, cars, 1 / 60)
-        ticks = ticks + 1
+-- Test 2: vertical corridor (north/south traffic) -- exercises the
+-- north=right/south=left lane assignment specifically.
+do
+    local grid = Grid.new()
+    grid:set_building(0, 0, "C")
+    for r = 1, 8 do
+        grid:set_road(0, r)
     end
+    grid:set_building(0, 9, "D")
 
-    assert(total_delivered >= 40,
-        "expected 40 deliveries across both directions without deadlocking, got "
-        .. total_delivered .. " after " .. ticks .. " ticks")
-    print("PASS: no_deadlock: bidirectional traffic on a shared corridor keeps flowing ("
-        .. total_delivered .. " delivered in " .. ticks .. " ticks)")
+    local c = Building.new("C", 0, 0, { 1, 0.5, 0, 1 })
+    local d = Building.new("D", 0, 9, { 0, 0.5, 1, 1 })
+    assert_no_deadlock("vertical corridor", grid, c, d)
 end
 
 print("ALL TESTS PASSED")
