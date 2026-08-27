@@ -57,4 +57,35 @@ do
     print("PASS: forecast: draw(y) runs without error")
 end
 
+-- Test 8: draw(y) sets an opaque white color before printing the label.
+-- Regression test: this used to inherit whatever color the caller (the
+-- forecast bar's dark background fill) last set, making the text
+-- invisible against it.
+do
+    local set_calls = {}
+    local orig_setColor = love.graphics.setColor
+    love.graphics.setColor = function(...) table.insert(set_calls, { ... }) end
+
+    local printed_color = nil
+    local orig_print = love.graphics.print
+    love.graphics.print = function(...)
+        printed_color = set_calls[#set_calls]
+    end
+
+    -- simulate the caller having last set a dark color, as GameState:draw()
+    -- does for the forecast bar's background rectangle
+    love.graphics.setColor(0.05, 0.05, 0.15, 1)
+
+    local f = Forecast.new("A", "B", 6)
+    f:draw(0)
+
+    love.graphics.setColor = orig_setColor
+    love.graphics.print = orig_print
+
+    assert(printed_color ~= nil, "draw() should call setColor before print")
+    assert(printed_color[1] == 1 and printed_color[2] == 1 and printed_color[3] == 1 and printed_color[4] == 1,
+        "draw() should set opaque white before printing, got " .. table.concat(printed_color, ","))
+    print("PASS: forecast: draw() sets an opaque white color before printing (visibility fix)")
+end
+
 print("ALL TESTS PASSED")

@@ -27,6 +27,10 @@ function Forecast:label()
 end
 
 function Forecast:draw(y)
+    -- Must set an explicit color here: love.graphics.print otherwise uses
+    -- whatever color the caller last set, which was the forecast bar's dark
+    -- background fill -- making this text invisible against it.
+    love.graphics.setColor(1, 1, 1, 1)
     love.graphics.print(self:label(), self.x, y)
 end
 

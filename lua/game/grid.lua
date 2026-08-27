@@ -1,14 +1,14 @@
 local Grid = {}
 Grid.__index = Grid
 
-Grid.COLS = 128
-Grid.ROWS = 68
-Grid.CELL_SIZE = 10
+Grid.COLS = 64
+Grid.ROWS = 34
+Grid.CELL_SIZE = 20
 Grid.FORECAST_BAR_H = 40
 Grid.SUBCELLS_PER_CELL = 2
-Grid.SUBCELL_SIZE = 5
-Grid.SUB_COLS = 256
-Grid.SUB_ROWS = 136
+Grid.SUBCELL_SIZE = 10
+Grid.SUB_COLS = 128
+Grid.SUB_ROWS = 68
 
 function Grid.new()
     local self = setmetatable({}, Grid)

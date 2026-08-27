@@ -6,13 +6,13 @@ local ForecastBar = require("lua/game/forecast_bar")
 local GameState = {}
 GameState.__index = GameState
 
--- Fixed 5-building layout: corners + center of the 128x68 grid.
+-- Fixed 5-building layout: corners + center of the 64x34 grid.
 local LAYOUT = {
-    { letter = "A", col = 4,   row = 4,  color = { 0.9, 0.2, 0.2, 1 } },
-    { letter = "B", col = 123, row = 4,  color = { 0.2, 0.4, 0.9, 1 } },
-    { letter = "C", col = 4,   row = 63, color = { 0.2, 0.8, 0.3, 1 } },
-    { letter = "D", col = 123, row = 63, color = { 0.9, 0.8, 0.2, 1 } },
-    { letter = "E", col = 63,  row = 33, color = { 0.7, 0.3, 0.8, 1 } },
+    { letter = "A", col = 2,  row = 2,  color = { 0.9, 0.2, 0.2, 1 } },
+    { letter = "B", col = 61, row = 2,  color = { 0.2, 0.4, 0.9, 1 } },
+    { letter = "C", col = 2,  row = 31, color = { 0.2, 0.8, 0.3, 1 } },
+    { letter = "D", col = 61, row = 31, color = { 0.9, 0.8, 0.2, 1 } },
+    { letter = "E", col = 31, row = 16, color = { 0.7, 0.3, 0.8, 1 } },
 }
 
 function GameState.new()
@@ -36,14 +36,21 @@ function GameState.new()
     return self
 end
 
-function GameState:toggle_road_at_pixel(px, py)
-    local col, row = self.grid:pixel_to_cell(px, py)
+-- Toggles a single grid cell to a road by cell coordinates directly (used
+-- by click-and-drag line-stepping, which already has cell coords and
+-- shouldn't round-trip back through pixel_to_cell).
+function GameState:toggle_road_at_cell(col, row)
     if col == nil or row == nil then
         return
     end
     if self.grid:is_empty(col, row) then
         self.grid:set_road(col, row)
     end
+end
+
+function GameState:toggle_road_at_pixel(px, py)
+    local col, row = self.grid:pixel_to_cell(px, py)
+    self:toggle_road_at_cell(col, row)
 end
 
 function GameState:_is_subcell_free(sc)

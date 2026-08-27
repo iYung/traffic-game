@@ -33,10 +33,10 @@ end
 -- Test 3: clicking a building cell is a no-op (doesn't overwrite it).
 do
     local grid = scene.state.grid
-    assert(grid:is_building(4, 4), "cell (4,4) should be building A per the fixed layout")
-    local px, py = grid:cell_to_pixel(4, 4)
+    assert(grid:is_building(2, 2), "cell (2,2) should be building A per the fixed layout")
+    local px, py = grid:cell_to_pixel(2, 2)
     love.mousepressed(px + 1, py + 1, 1)
-    assert(grid:is_building(4, 4), "clicking a building cell must not change its state")
+    assert(grid:is_building(2, 2), "clicking a building cell must not change its state")
     print("PASS: game_scene: left-click on a building cell is a no-op")
 end
 
@@ -55,6 +55,37 @@ do
     love.mousepressed(px + 1, py + 1, 2)
     assert(grid:is_empty(20, 20), "a non-left click should not draw a road")
     print("PASS: game_scene: non-left-click does not draw a road")
+end
+
+-- Test 6: click-and-drag draws a continuous line of roads, not just the
+-- start and end cells.
+do
+    local grid = scene.state.grid
+    for row = 24, 28 do
+        assert(grid:is_empty(30, row), "cell (30," .. row .. ") should start empty")
+    end
+
+    local x0, y0 = grid:cell_to_pixel(30, 24)
+    local x1, y1 = grid:cell_to_pixel(30, 28)
+    love.mousepressed(x0 + 1, y0 + 1, 1)
+    love.mousemoved(x1 + 1, y1 + 1, 0, 0, false)
+    love.mousereleased(x1 + 1, y1 + 1, 1)
+
+    for row = 24, 28 do
+        assert(grid:is_road(30, row), "cell (30," .. row .. ") should become a road via drag")
+    end
+    print("PASS: game_scene: click-and-drag draws a continuous line of roads")
+end
+
+-- Test 7: mousemoved without an active drag (no prior mousepressed, or
+-- after mousereleased) does not draw anything.
+do
+    local grid = scene.state.grid
+    assert(grid:is_empty(40, 10), "cell (40,10) should start empty")
+    local px, py = grid:cell_to_pixel(40, 10)
+    love.mousemoved(px + 1, py + 1, 0, 0, false)
+    assert(grid:is_empty(40, 10), "mousemoved without an active drag should not draw a road")
+    print("PASS: game_scene: mousemoved without an active drag does not draw")
 end
 
 print("ALL TESTS PASSED")

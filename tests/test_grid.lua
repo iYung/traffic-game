@@ -2,18 +2,18 @@ local Grid = require("lua/game/grid")
 
 -- Test 1: default dimensions/constants
 do
-    assert(Grid.COLS == 128, "COLS should be 128, got " .. tostring(Grid.COLS))
-    assert(Grid.ROWS == 68, "ROWS should be 68, got " .. tostring(Grid.ROWS))
-    assert(Grid.CELL_SIZE == 10, "CELL_SIZE should be 10, got " .. tostring(Grid.CELL_SIZE))
+    assert(Grid.COLS == 64, "COLS should be 64, got " .. tostring(Grid.COLS))
+    assert(Grid.ROWS == 34, "ROWS should be 34, got " .. tostring(Grid.ROWS))
+    assert(Grid.CELL_SIZE == 20, "CELL_SIZE should be 20, got " .. tostring(Grid.CELL_SIZE))
     assert(Grid.FORECAST_BAR_H == 40, "FORECAST_BAR_H should be 40, got " .. tostring(Grid.FORECAST_BAR_H))
     assert(Grid.SUBCELLS_PER_CELL == 2, "SUBCELLS_PER_CELL should be 2, got " .. tostring(Grid.SUBCELLS_PER_CELL))
-    assert(Grid.SUBCELL_SIZE == 5, "SUBCELL_SIZE should be 5, got " .. tostring(Grid.SUBCELL_SIZE))
-    assert(Grid.SUB_COLS == 256, "SUB_COLS should be 256, got " .. tostring(Grid.SUB_COLS))
-    assert(Grid.SUB_ROWS == 136, "SUB_ROWS should be 136, got " .. tostring(Grid.SUB_ROWS))
+    assert(Grid.SUBCELL_SIZE == 10, "SUBCELL_SIZE should be 10, got " .. tostring(Grid.SUBCELL_SIZE))
+    assert(Grid.SUB_COLS == 128, "SUB_COLS should be 128, got " .. tostring(Grid.SUB_COLS))
+    assert(Grid.SUB_ROWS == 68, "SUB_ROWS should be 68, got " .. tostring(Grid.SUB_ROWS))
 
     local g = Grid.new()
     assert(g.cells[0][0] == "empty", "cell (0,0) should start empty")
-    assert(g.cells[127][67] == "empty", "cell (127,67) should start empty")
+    assert(g.cells[63][33] == "empty", "cell (63,33) should start empty")
     assert(g.building_at[0][0] == nil, "building_at (0,0) should start nil")
     print("PASS: grid: default dimensions/constants")
 end
@@ -22,8 +22,8 @@ end
 do
     local g = Grid.new()
     local x, y = g:cell_to_pixel(5, 3)
-    assert(x == 50, "cell_to_pixel x should be 50, got " .. tostring(x))
-    assert(y == 70, "cell_to_pixel y should be 40 + 30 = 70, got " .. tostring(y))
+    assert(x == 100, "cell_to_pixel x should be 100, got " .. tostring(x))
+    assert(y == 100, "cell_to_pixel y should be 40 + 60 = 100, got " .. tostring(y))
 
     local col, row = g:pixel_to_cell(x, y)
     assert(col == 5, "round-trip col should be 5, got " .. tostring(col))

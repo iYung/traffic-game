@@ -1,8 +1,9 @@
 # traffic-game
 
 A grid-based traffic simulation built on the love-exemplar Love2D architecture.
-Five fixed buildings sit on a 128×68 grid of 10×10px cells; the player draws
-permanent roads by clicking empty cells to connect them. A scrolling forecast
+Five fixed buildings sit on a 64×34 grid of 20×20px cells; the player draws
+permanent roads by clicking (or click-and-dragging across) empty cells to
+connect them. A scrolling forecast
 bar along the top announces incoming demand (`A -> B x6`) between buildings,
 and once a building is connected to the network, cars pathfind across the
 road graph and drive sub-cell by sub-cell toward their destination, yielding
