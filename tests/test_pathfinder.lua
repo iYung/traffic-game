@@ -118,4 +118,49 @@ do
     print("PASS: pathfinder: detour required when direct route is blocked")
 end
 
+-- Test 6: a third-party building blocks through-traffic -- it is only
+-- walkable as the trip's own start/goal, not as a shortcut for someone
+-- else's trip, even though Grid:is_passable treats it as structurally
+-- passable (buildings connect to their own adjacent roads).
+do
+    local g = Grid.new()
+    g:set_road(0, 0)
+    g:set_building(1, 0, "X") -- sits directly in the only row -- no detour
+    g:set_road(2, 0)
+
+    local start = { col = 0, row = 0 } -- top-left sub-cell of road cell (0,0)
+    local goal = { col = 4, row = 0 } -- top-left sub-cell of road cell (2,0)
+
+    local path = Pathfinder.find_path(g, start, goal)
+    assert(path == nil,
+        "a building with no road detour must block the route, not be driven through, got a path of length "
+        .. tostring(path and #path))
+    print("PASS: pathfinder: a building with no detour blocks through-traffic (not driven through)")
+end
+
+-- Test 7: when a detour around the building exists, the path takes it
+-- instead of cutting through the building's sub-cells.
+do
+    local g = Grid.new()
+    g:set_road(0, 0)
+    g:set_building(1, 0, "X") -- blocks row 0 directly between start and goal
+    g:set_road(2, 0)
+    g:set_road(0, 1)
+    g:set_road(1, 1)
+    g:set_road(2, 1) -- detour row
+
+    local start = { col = 0, row = 0 }
+    local goal = { col = 4, row = 0 }
+
+    local path = Pathfinder.find_path(g, start, goal)
+    assert(path ~= nil, "expected a detour path around the building")
+
+    for _, sub in ipairs(path) do
+        local c, r = g:subcell_to_cell(sub.col, sub.row)
+        assert(not (c == 1 and r == 0),
+            "path must not pass through building cell (1,0), got sub-cell (" .. sub.col .. "," .. sub.row .. ")")
+    end
+    print("PASS: pathfinder: a detour route around a building never enters the building's sub-cells")
+end
+
 print("ALL TESTS PASSED")
