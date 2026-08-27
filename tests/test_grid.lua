@@ -112,11 +112,15 @@ do
     print("PASS: grid: cell_subcells returns correct 4 sub-cells")
 end
 
--- Test 6: subcell_neighbors — 3 same-cell neighbors plus cross-cell only when adjacent cell is road
+-- Test 6: subcell_neighbors — 3 same-cell neighbors plus a cross-cell edge
+-- only when the adjacent cell is a road AND the sub-cell is on the lane
+-- assigned to that direction (lane discipline: eastbound/westbound are
+-- separated by row (ly), southbound/northbound by column (lx), so
+-- opposite-direction traffic never shares a sub-cell along a corridor).
 do
     local g = Grid.new()
     g:set_road(5, 5)
-    -- neighbor cell to the east is a road, so the east-edge subcell should connect across
+    -- neighbor cell to the east is a road
     g:set_road(6, 5)
     -- neighbor cell to the west stays empty
 
@@ -124,27 +128,62 @@ do
     -- subs[1] = (10,10) local (0,0); subs[2] = (10,11) local (0,1);
     -- subs[3] = (11,10) local (1,0); subs[4] = (11,11) local (1,1)
 
-    -- local (1,0) = east edge, top row -> scol=11, srow=10, lx=1, ly=0
-    local nbrs_east = g:subcell_neighbors(11, 10)
-    -- 3 same-cell neighbors: (10,10) (10,11) (11,11)
+    -- local (1,1) = east edge, bottom row (the eastbound lane) -> scol=11, srow=11, lx=1, ly=1
+    local nbrs_east = g:subcell_neighbors(11, 11)
     local same_cell_count = 0
     local cross_cell_count = 0
     for _, n in ipairs(nbrs_east) do
         if n.col == 10 and n.row == 10 then same_cell_count = same_cell_count + 1 end
         if n.col == 10 and n.row == 11 then same_cell_count = same_cell_count + 1 end
-        if n.col == 11 and n.row == 11 then same_cell_count = same_cell_count + 1 end
-        -- cross-cell neighbor into cell (6,5)'s local (0,0) = (12, 10)
-        if n.col == 12 and n.row == 10 then cross_cell_count = cross_cell_count + 1 end
+        if n.col == 11 and n.row == 10 then same_cell_count = same_cell_count + 1 end
+        -- cross-cell neighbor into cell (6,5)'s local (0,1) = (12, 11)
+        if n.col == 12 and n.row == 11 then cross_cell_count = cross_cell_count + 1 end
     end
     assert(same_cell_count == 3, "expected 3 same-cell neighbors, matched " .. same_cell_count)
-    assert(cross_cell_count == 1, "expected 1 cross-cell neighbor into road cell (6,5)")
-    assert(#nbrs_east == 4, "east-edge subcell of a cell with a road neighbor should have 4 neighbors, got " .. tostring(#nbrs_east))
+    assert(cross_cell_count == 1, "expected 1 cross-cell neighbor (eastbound lane) into road cell (6,5)")
+    assert(#nbrs_east == 4, "eastbound-lane subcell of a cell with a road neighbor should have 4 neighbors, got " .. tostring(#nbrs_east))
 
-    -- local (0,0) = west edge, top row -> scol=10, srow=10, lx=0, ly=0.
+    -- local (1,0) = east edge, top row (the *westbound* lane, not eastbound)
+    -- -> lane discipline means this one must NOT cross east even though the
+    -- neighbor cell is a passable road.
+    local nbrs_wrong_lane = g:subcell_neighbors(11, 10)
+    assert(#nbrs_wrong_lane == 3, "top-row east-edge subcell (westbound lane) must not cross east, got " .. tostring(#nbrs_wrong_lane))
+
+    -- local (0,0) = west edge, top row (the westbound lane) -> scol=10, srow=10, lx=0, ly=0.
     -- west neighbor cell (4,5) is empty, so no cross-cell connection there.
     local nbrs_west = g:subcell_neighbors(10, 10)
     assert(#nbrs_west == 3, "west-edge subcell against an empty neighbor cell should have only 3 neighbors, got " .. tostring(#nbrs_west))
-    print("PASS: grid: subcell_neighbors same-cell + cross-cell-only-if-road")
+    print("PASS: grid: subcell_neighbors same-cell + lane-disciplined cross-cell edges")
+end
+
+-- Test 6b: lane discipline keeps opposite directions on disjoint sub-cells
+-- along a shared corridor (the actual fix for the head-on deadlock bug).
+do
+    local g = Grid.new()
+    g:set_road(5, 5)
+    g:set_road(6, 5)
+    g:set_road(7, 5)
+
+    -- eastbound lane subcells run along the bottom row (ly==1)
+    local e1 = g:subcell_neighbors(11, 11) -- cell (5,5) east edge, bottom row
+    local crossed_to_6 = nil
+    for _, n in ipairs(e1) do
+        if n.col == 12 then crossed_to_6 = n end
+    end
+    assert(crossed_to_6 ~= nil, "eastbound lane should cross from cell (5,5) into cell (6,5)")
+    assert(crossed_to_6.row == 11, "eastbound lane should stay on the bottom row (srow=11) crossing into cell (6,5)")
+
+    -- westbound lane subcells run along the top row (ly==0), and must never
+    -- visit the eastbound lane's sub-cells while traversing the same cells
+    local w1 = g:subcell_neighbors(12, 10) -- cell (6,5) west edge, top row
+    local crossed_to_5 = nil
+    for _, n in ipairs(w1) do
+        if n.col == 11 then crossed_to_5 = n end
+    end
+    assert(crossed_to_5 ~= nil, "westbound lane should cross from cell (6,5) into cell (5,5)")
+    assert(crossed_to_5.row == 10, "westbound lane should stay on the top row (srow=10) crossing into cell (5,5)")
+    assert(crossed_to_5.row ~= crossed_to_6.row, "eastbound and westbound lanes must use disjoint sub-cell rows")
+    print("PASS: grid: eastbound/westbound lanes stay on disjoint sub-cell rows")
 end
 
 -- Test 7: subcell_neighbors returns fewer neighbors at grid edges / against empty cells

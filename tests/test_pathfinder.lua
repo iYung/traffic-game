@@ -14,7 +14,11 @@ do
 
     local path = Pathfinder.find_path(g, start, goal)
     assert(path ~= nil, "expected a path along the straight line of roads")
-    assert(#path == 5, "expected path length 5 (subcol 0..4), got " .. tostring(#path))
+    -- 6, not 5: lane discipline means eastbound travel must run along the
+    -- bottom row (ly==1), so the path needs one intra-cell hop to shift off
+    -- the top-row (0,0) start onto that lane, and one more at the very end
+    -- to shift back onto the top-row (4,0) goal -- see Grid:subcell_neighbors.
+    assert(#path == 6, "expected path length 6 (lane-shift + 3 eastbound hops + lane-shift), got " .. tostring(#path))
     assert(path[1].col == 0 and path[1].row == 0, "path should start at start sub-cell")
     assert(path[#path].col == 4 and path[#path].row == 0, "path should end at goal sub-cell")
     print("PASS: pathfinder: straight line of roads produces expected path length")
@@ -43,7 +47,8 @@ do
 
     local path = Pathfinder.find_path(g, start, goal)
     assert(path ~= nil, "expected a path from a building sub-cell into an adjacent road")
-    assert(#path == 3, "expected path length 3, got " .. tostring(#path))
+    -- 4, not 3: same lane-discipline lane-shift as the straight-line test.
+    assert(#path == 4, "expected path length 4, got " .. tostring(#path))
     assert(path[1].col == 0 and path[1].row == 0, "path should start at the building sub-cell")
     assert(path[#path].col == 2 and path[#path].row == 0, "path should end at the goal sub-cell")
     print("PASS: pathfinder: path found through a building cell endpoint")
@@ -83,9 +88,9 @@ do
     assert(path[#path].col == 4 and path[#path].row == 0, "detour path should end at goal sub-cell")
 
     -- the unobstructed straight-line distance between these two sub-cells
-    -- would be 5 nodes (as in test 1); since the direct route is blocked,
+    -- would be 6 nodes (as in test 1); since the direct route is blocked,
     -- the real path must be strictly longer.
-    assert(#path > 5, "expected detour path to be longer than the unobstructed straight-line path, got " .. tostring(#path))
+    assert(#path > 6, "expected detour path to be longer than the unobstructed straight-line path, got " .. tostring(#path))
 
     -- verify the path genuinely dips into row 1 (srow >= 2) to go around
     -- the blocker, rather than being some other invalid shortcut
